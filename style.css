@@ -1,3 +1,20 @@
-body {
-   background: #000;
+.hide {
+   display: none;
+}
+
+
+
+.gameArea {
+   background-color: #efefef;
+   margin: 0 auto;
+   max-width: 500px;
+   min-height: 150px;
+   border-left: 5px solid #222;
+   border-right: 5px solid #222;
+}
+
+.playerUnit {
+   width: 50px;
+   height: 100px;
+   background: transparent url('./img/player_unit.png') center / cover no-repeat;
 }
