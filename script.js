@@ -1,7 +1,16 @@
 const gameScore = document.querySelector('.score'),
    btnStart = document.querySelector('.start'),
    gameArea = document.querySelector('.gameArea'),
-   playerUnit = document.createElement('div');
+   playerUnit = document.createElement('div'),
+   //music = document.createElement('audio');
+   music = document.createElement('embed');
+
+//music.setAttribute('autoplay', true);
+//music.setAttribute('src', './audio.mp3');
+//music.setAttribute('controls', true);
+music.setAttribute('src', './audio.mp3');
+music.setAttribute('type', 'audio/mp3');
+music.classList.add('music');
 
 const controlKeys = {
    ArrowUp: false,
@@ -26,9 +35,10 @@ document.addEventListener('keyup', stopRun);
 
 function startGame() {
    btnStart.classList.add('hide');
-
+   gameArea.innerHTML = ''; // рассчищаем наше поле игровое перед стартом игры
+   
    // create line marking
-   for (let i = 0; i < getQuantityElements(100); i++) {
+   for (let i = 0; i < getQuantityElements(100) + 1; i++) { // зачем тут добавили +1
       const line = document.createElement('div');
       line.classList.add('gameArea__line');
       line.y = i * 100;
@@ -43,19 +53,35 @@ function startGame() {
       botUnit.y = -100 * setOptions.traffic * i; // более универсальный вариант без зависимости от 100 (размера юнита)
       botUnit.style.left = Math.floor(Math.random() * (gameArea.offsetWidth - botUnit.offsetWidth)) + 'px';
       botUnit.style.top = botUnit.y + 'px';
-      botUnit.style.backgroundImage = 'url(\'./img/enemy_unit_2.png\')';
+      let botImg = Math.floor(Math.random() * 2) + 1; // ? разобраться с этим вопросом!!!
+      console.log(botImg);
+      botUnit.style.backgroundImage = `url(\'./img/enemy_unit_${botImg}.png\')`;
       gameArea.append(botUnit);
    }
 
+   setOptions.score = 0;
    setOptions.start = true;
    gameArea.append(playerUnit);
+   // задаем юниту игрока начальные позиции на старте
+   playerUnit.style.left = (gameArea.offsetWidth/2 - playerUnit.offsetWidth/2) + 'px';
+   playerUnit.style.top = 'auto';
+   playerUnit.style.bottom = '25px';
+
+   gameArea.append(music);
+
    setOptions.x = playerUnit.offsetLeft; // получаем положение автомобиля начальное;
    setOptions.y = playerUnit.offsetTop;
    requestAnimationFrame(playGame);
+
+   /*setTimeout(() => {
+      setOptions.start = false;
+   }, 10000);*/
 }
 
 function playGame() {
    if (setOptions.start) {
+      setOptions.score += setOptions.speed;
+      gameScore.textContent = 'SCORE: ' + setOptions.score; // оптимизировать, чтоб текст каждый раз не выводить
       moveRoad();
       moveBotUnit();
       if (controlKeys.ArrowLeft && setOptions.x > 0) {
@@ -75,18 +101,28 @@ function playGame() {
       playerUnit.style.top = setOptions.y + 'px';
 
       requestAnimationFrame(playGame);
+   } else {
+      music.remove();
    }
 }
 
 function startRun(event) {
    event.preventDefault();
-   controlKeys[event.key] = true;
+   if (controlKeys.hasOwnProperty(event.key)) { // разобраться с этой логикой
+      controlKeys[event.key] = true;
+   }
+
+   /*if (event.key in controlKeys) { // второй способ. но более затратный так как if in будет искать эти свойства/конпки во всей ветке, не только в объекте, но и его прототипе
+      controlKeys[event.key] = true;
+   }*/
    //console.log(controlKeys);
 }
 
 function stopRun(event) {
    event.preventDefault();
-   controlKeys[event.key] = false;
+   if (controlKeys.hasOwnProperty(event.key)) { // разобраться с этой логикой
+      controlKeys[event.key] = false;
+   }
    //console.log(controlKeys); 
 }
 
@@ -105,6 +141,20 @@ function moveRoad() {
 function moveBotUnit() {
    let botUnits = document.querySelectorAll('.botUnit');
    botUnits.forEach(bot => {
+      let playerUnitDimensions = playerUnit.getBoundingClientRect();
+      let botUnitDimensions = bot.getBoundingClientRect();
+
+      if (playerUnitDimensions.top <= botUnitDimensions.bottom &&
+         playerUnitDimensions.right >= botUnitDimensions.left &&
+         playerUnitDimensions.left <= botUnitDimensions.right &&
+         playerUnitDimensions.bottom >= botUnitDimensions.top) {
+            setOptions.start = false;
+            console.warn('ДТП');
+            btnStart.classList.remove('hide');
+            btnStart.style.top = gameScore.offsetHeight + 'px';
+
+      }
+
       bot.y += setOptions.speed / 2;
       bot.style.top = bot.y + 'px';
       if (bot.y >= document.documentElement.clientHeight) {
@@ -115,5 +165,6 @@ function moveBotUnit() {
 }
 
 function getQuantityElements(heightElement) {
-   return document.documentElement.clientHeight / heightElement + 1;
+   //return document.documentElement.clientHeight / heightElement + 1;
+   return Math.ceil(gameArea.offsetHeight / heightElement); // разобраться !!!
 }
